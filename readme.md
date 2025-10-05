@@ -1,57 +1,66 @@
-This repository contains implementations of two probabilistic regression methods applied to the Auto MPG dataset:
+# Probabilistic Regression on Auto MPG
 
-Gaussian Mixture Model (GMM)
+This repository provides implementations of two probabilistic regression methods applied to the **Auto MPG dataset**: a **Gaussian Mixture Model (GMM)** and a **Mixture Density Network (MDN)**. Both methods focus on modeling the error distribution of a base model to provide not only accurate predictions but also robust uncertainty estimates.
 
-Mixture Density Network (MDN)
+This work was developed as part of the author's Master's thesis:
 
-Both methods were developed and analyzed as part of my MS Thesis work:
+> **Amish Anand (2025). _Uncertainty Estimation in Regression Using Additive Models and Gaussian Processes._ Master’s Thesis, Department of Data Science and Engineering, IISER Bhopal.**
 
-Amish Anand (2025). Uncertainty Estimation in Regression Using Additive Models and Gaussian Processes. Master’s Thesis, Department of Data Science and Engineering, IISER Bhopal.
+---
 
-📌 Gaussian Mixture Model (GMM) Framework
-This approach begins by using a base model (GP-NAM) to make an initial prediction. The difference between the true target value and this initial prediction is calculated as the residual. The core idea is to model the relationship between the input features and these residuals.
+## 📂 Dataset
 
-A Gaussian Mixture Model is used to represent the joint probability distribution of the inputs and their corresponding residuals. The number of Gaussian components in the mixture is a key hyperparameter, which is selected by finding the model that minimizes the Bayesian Information Criterion (BIC).
+The project uses the classic **[Auto MPG Dataset](https://archive.ics.uci.edu/ml/datasets/auto+mpg)** from the UCI Machine Learning Repository. 
+## 📌 Core Methodologies
 
-Each component in the GMM has its own set of parameters: a mixing weight, a mean vector, and a covariance matrix. For a new, unseen input, the framework uses the rules of Gaussian conditioning to derive a conditional probability distribution for the residual. The final predicted residual is a weighted average based on how much "responsibility" each component takes for the given input. The variance is also calculated to quantify the uncertainty.
+Both methods share a common strategy: instead of modeling the target variable directly, they model the **residuals** (errors) of a powerful base model, in this case, a **Gaussian Process Neural Additive Model (GP-NAM)**.
 
-The final prediction is then the sum of the original prediction from the base model and the predicted residual from the GMM. The predictive uncertainty is derived from the variance calculated by the model.
+### 1. Gaussian Mixture Model (GMM) Framework
 
-📌 Mixture Density Network (MDN) Framework
-The Mixture Density Network models the distribution of residuals using a neural network. Similar to the GMM approach, it starts by calculating the residuals from a base prediction model.
+The GMM approach models the joint probability distribution of the input features and their corresponding residuals.
 
-The MDN consists of a standard neural network architecture (e.g., with ReLU activations in its hidden layers), but with a specialized output layer. Instead of outputting a single value, the network outputs the parameters for a mixture of Gaussian distributions. For a mixture of m Gaussians, the network will output three sets of parameters for each input:
+* **Residual Calculation:** First, the difference between the true target and the base model's prediction is calculated. This error term is the residual.
+* **Mixture Modeling:** A Gaussian Mixture Model is fitted to the combined data (inputs and residuals). This captures complex, multi-modal relationships that a single error distribution might miss.
+* **Component Selection:** The optimal number of Gaussian components for the mixture is determined by minimizing the **Bayesian Information Criterion (BIC)**, preventing overfitting.
+* **Conditional Prediction:** For a new data point, the model uses the rules of Gaussian conditioning to predict the conditional distribution of the residual. The final predicted residual is a weighted average based on each component's "responsibility" for the new input.
+* **Final Output:** The final prediction is the sum of the base model's output and the predicted residual. The model also provides a robust uncertainty estimate from the residual's variance.
 
-Means: The center of each Gaussian component.
+### 2. Mixture Density Network (MDN) Framework
 
-Standard Deviations: The width or spread of each component (typically output as logarithms for numerical stability).
+The MDN uses a neural network to learn the parameters of a mixture model, providing a highly flexible and powerful alternative to the GMM.
 
-Mixing Coefficients: The weight for each component, processed through a softmax layer to ensure they all sum to one.
+* **Neural Network Core:** The model is a neural network that takes input features and, instead of outputting a single prediction, outputs the parameters of a Gaussian mixture distribution.
+* **Dynamic Parameter Estimation:** For any given input, the MDN outputs:
+    * **Means:** The centers of the Gaussian components.
+    * **Standard Deviations:** The spread or width of each component.
+    * **Mixing Coefficients:** The weight of each component in the final mixture, calculated via a softmax layer.
+* **Conditional Distribution:** The network effectively learns to map input features to a specific, customized probability distribution for the residual.
+* **Final Output:** The final predicted residual is the mean of this output distribution. This is added back to the base model's prediction to produce the final result, complete with a learned uncertainty profile.
 
-The network is trained to find the optimal parameters of this mixture model that best describe the distribution of the residuals given the input features. The final predicted residual is the expected value (the mean) of the resulting mixture distribution. This predicted residual is then added to the base model's prediction to get the final result.
+---
 
-📖 Citation
+## 📖 Citation
+
 If you use this work, please cite the thesis and foundational references:
 
-Thesis
+**Thesis**
+- Amish Anand. *Uncertainty Estimation in Regression Using Additive Models and Gaussian Processes.* MS Thesis, IISER Bhopal, 2025.
 
-Amish Anand. Uncertainty Estimation in Regression Using Additive Models and Gaussian Processes. MS Thesis, IISER Bhopal, 2025.
+**Foundational References**
+- Douglas A Reynolds et al. Gaussian mixture models. Encyclopedia of Biometrics, 741(659-663):3, 2009.
 
-Foundational References
+- Alexander Fabisch. gmr: Gaussian mixture regression. JOSS, 6(62):3054, 2021.
 
-Douglas A Reynolds et al. Gaussian mixture models. Encyclopedia of Biometrics, 741(659-663):3, 2009.
+- Zoubin Ghahramani and Michael Jordan. Supervised learning from incomplete data via an EM approach. NeurIPS, 1993.
 
-Alexander Fabisch. gmr: Gaussian mixture regression. JOSS, 6(62):3054, 2021.
+- Christopher M Bishop. Mixture density networks. Technical Report, 1994.
 
-Zoubin Ghahramani and Michael Jordan. Supervised learning from incomplete data via an EM approach. NeurIPS, 1993.
+- Axel Brando. Mixture density networks (MDN) for distribution and uncertainty estimation. Master’s Thesis, 2017.
 
-Christopher M Bishop. Mixture density networks. Technical Report, 1994.
+- Axel Brando. Mixture density networks (MDN) for distribution and uncertainty estimation. GitHub repository, 2017.
 
-Axel Brando. Mixture density networks (MDN) for distribution and uncertainty estimation. Master’s Thesis, 2017.
+- Wei Zhang, Brian Barr, and John Paisley. Gaussian process neural additive models. arXiv:2402.12518, 2024.
 
-Axel Brando. Mixture density networks (MDN) for distribution and uncertainty estimation. GitHub repository, 2017.
+## 📬 Contact
 
-Wei Zhang, Brian Barr, and John Paisley. Gaussian process neural additive models. arXiv:2402.12518, 2024.
-
-📬 Contact
-📧 amish6202@gmail.com
+Amish Anand - amish6202@gmail.com
