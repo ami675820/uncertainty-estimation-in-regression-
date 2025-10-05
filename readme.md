@@ -1,140 +1,57 @@
-# Auto MPG – GMM & MDN Approaches
+This repository contains implementations of two probabilistic regression methods applied to the Auto MPG dataset:
 
-This repository contains implementations of two probabilistic regression methods applied to the **Auto MPG dataset**:
+Gaussian Mixture Model (GMM)
 
-1.  **Gaussian Mixture Model (GMM)**
-2.  **Mixture Density Network (MDN)**
+Mixture Density Network (MDN)
 
-Both methods were developed and analyzed as part of my **MS Thesis work**:
+Both methods were developed and analyzed as part of my MS Thesis work:
 
-> **Amish Anand (2025). _Uncertainty Estimation in Regression Using Additive Models and Gaussian Processes._ Master’s Thesis, Department of Data Science and Engineering, IISER Bhopal.**
+Amish Anand (2025). Uncertainty Estimation in Regression Using Additive Models and Gaussian Processes. Master’s Thesis, Department of Data Science and Engineering, IISER Bhopal.
 
----
+📌 Gaussian Mixture Model (GMM) Framework
+This approach begins by using a base model (GP-NAM) to make an initial prediction. The difference between the true target value and this initial prediction is calculated as the residual. The core idea is to model the relationship between the input features and these residuals.
 
-## 📌 Gaussian Mixture Model (GMM) Framework
+A Gaussian Mixture Model is used to represent the joint probability distribution of the inputs and their corresponding residuals. The number of Gaussian components in the mixture is a key hyperparameter, which is selected by finding the model that minimizes the Bayesian Information Criterion (BIC).
 
-After obtaining the initial prediction from our base model (GP-NAM), the residual is computed as:
-<p align="center">
-<img src="https://math.vercel.app?from=r(x)%20=%20y%20-%20\hat{y}_{GPNAM}(x)">
-</p>
+Each component in the GMM has its own set of parameters: a mixing weight, a mean vector, and a covariance matrix. For a new, unseen input, the framework uses the rules of Gaussian conditioning to derive a conditional probability distribution for the residual. The final predicted residual is a weighted average based on how much "responsibility" each component takes for the given input. The variance is also calculated to quantify the uncertainty.
 
-We model the joint distribution of the inputs and residuals with a Gaussian mixture model:
-<p align="center">
-<img src="https://math.vercel.app?from=p(x,r)%20=%20\sum_{k=1}^{K}%20\pi_k%20\mathcal{N}\left(\begin{bmatrix}x%20\\%20r\end{bmatrix}%20\Bigg|%20\mu_k,%20\Sigma_k\right)">
-</p>
+The final prediction is then the sum of the original prediction from the base model and the predicted residual from the GMM. The predictive uncertainty is derived from the variance calculated by the model.
 
-where each component *k* has:
+📌 Mixture Density Network (MDN) Framework
+The Mixture Density Network models the distribution of residuals using a neural network. Similar to the GMM approach, it starts by calculating the residuals from a base prediction model.
 
--   Mixing weight <img src="https://math.vercel.app?from=\pi_k">, with <img src="https://math.vercel.app?from=\sum_{k=1}^K\pi_k=1">.
--   Mean vector <img src="https://math.vercel.app?from=\mu_k=\begin{bmatrix}\mu^x_k\\\mu^r_k\end{bmatrix}">.
--   Covariance matrix partitioned as:
+The MDN consists of a standard neural network architecture (e.g., with ReLU activations in its hidden layers), but with a specialized output layer. Instead of outputting a single value, the network outputs the parameters for a mixture of Gaussian distributions. For a mixture of m Gaussians, the network will output three sets of parameters for each input:
 
-<p align="center">
-<img src="https://math.vercel.app?from=\Sigma_k=\begin{bmatrix}\Sigma^{xx}_k%26\Sigma^{xr}_k\\\Sigma^{rx}_k%26\Sigma^{rr}_k\end{bmatrix}">
-</p>
+Means: The center of each Gaussian component.
 
-The number of components *K* is selected using the **Bayesian Information Criterion (BIC)**.
+Standard Deviations: The width or spread of each component (typically output as logarithms for numerical stability).
 
-For a new input <img src="https://math.vercel.app?from=x^*">, the conditional distribution of residual *r* is computed using Gaussian conditioning:
+Mixing Coefficients: The weight for each component, processed through a softmax layer to ensure they all sum to one.
 
-<p align="center">
-<img src="https://math.vercel.app?from=\mu_{r|x}^k=\mu^r_k%2B\Sigma^{rx}_k(\Sigma^{xx}_k)^{-1}(x^*-\mu^x_k)">
-</p>
-<p align="center">
-<img src="https://math.vercel.app?from=\sigma^2_{r|x}^k=\Sigma^{rr}_k-\Sigma^{rx}_k(\Sigma^{xx}_k)^{-1}\Sigma^{xr}_k">
-</p>
+The network is trained to find the optimal parameters of this mixture model that best describe the distribution of the residuals given the input features. The final predicted residual is the expected value (the mean) of the resulting mixture distribution. This predicted residual is then added to the base model's prediction to get the final result.
 
-The responsibility for each component is:
-
-<p align="center">
-<img src="https://math.vercel.app?from=h_k(x^*)%3D\frac{\pi_k\mathcal{N}(x^*|\mu^x_k,\Sigma^{xx}_k)}{\sum_{j=1}^K\pi_j\mathcal{N}(x^*|\mu^x_j,\Sigma^{xx}_j)}">
-</p>
-
-The overall predicted residual and its variance are:
-
-<p align="center">
-<img src="https://math.vercel.app?from=\hat{r}(x^*)%3D\sum_{k=1}^Kh_k(x^*)\mu_{r|x}^k">
-</p>
-<p align="center">
-<img src="https://math.vercel.app?from=\hat{\sigma}^2(x^*)%3D\sum_{k=1}^Kh_k(x^*)\Big[\sigma^2_{r|x}^k%2B(\mu_{r|x}^k-\hat{r}(x^*))^2\Big]">
-</p>
-
-Thus, the final prediction is:
-
-<p align="center">
-<img src="https://math.vercel.app?from=\hat{y}(x^*)%3D\hat{y}_{GPNAM}(x^*)%2B\hat{r}(x^*)">
-</p>
-
-with predictive uncertainty quantified by:
-
-<p align="center">
-<img src="https://math.vercel.app?from=\hat{\sigma}(x^*)%3D\sqrt{\hat{\sigma}^2(x^*)}">
-</p>
-
----
-
-## 📌 Mixture Density Network (MDN) Framework
-
-The MDN models the distribution of residuals using a **neural network-based probabilistic formulation**.
-
-Residuals are defined as:
-<p align="center">
-<img src="https://math.vercel.app?from=r=y-\hat{y}_{base}">
-</p>
-
-### MDN Structure
-
-1.  **Hidden Layer:** Uses nonlinear activations (ReLU) to capture complex patterns.
-2.  **Output Layer:** Outputs *3m* values for a mixture of *m* Gaussians:
-    -   Means: <img src="https://math.vercel.app?from=\mu_1,...,\mu_m">.
-    -   Log-standard deviations: <img src="https://math.vercel.app?from=\tilde{\sigma}_1,...,\tilde{\sigma}_m">, with <img src="https://math.vercel.app?from=\sigma_i=\exp(\tilde{\sigma}_i)">.
-    -   Mixing coefficients:
-
-<p align="center">
-<img src="https://math.vercel.app?from=\alpha_i%3D\frac{\exp(\alpha_i^*)}{\sum_{j=1}^m\exp(\alpha_j^*)},\quad\sum_i\alpha_i=1">
-</p>
-
-The MDN models the conditional distribution:
-
-<p align="center">
-<img src="https://math.vercel.app?from=p(r|x)%3D\sum_{i=1}^m\alpha_i\mathcal{N}(r;\mu_i,\sigma_i^2)">
-</p>
-
-### Expected Value & Variance
-
-<p align="center">
-<img src="https://math.vercel.app?from=\mathbb{E}[r|x]%3D\sum_{i=1}^m\alpha_i\mu_i">
-</p>
-<p align="center">
-<img src="https://math.vercel.app?from=\text{Var}(r|x)%3D\sum_{i=1}^m\alpha_i(\sigma_i^2%2B\mu_i^2)-\Big(\sum_{i=1}^m\alpha_i\mu_i\Big)^2">
-</p>
-
-### Final Prediction
-
-<p align="center">
-<img src="https://math.vercel.app?from=\hat{y}%3D\hat{y}_{base}%2B\mathbb{E}[r|x]">
-</p>
-
----
-
-## 📖 Citation
-
+📖 Citation
 If you use this work, please cite the thesis and foundational references:
 
-**Thesis**
-- Amish Anand. *Uncertainty Estimation in Regression Using Additive Models and Gaussian Processes.* MS Thesis, IISER Bhopal, 2025.
+Thesis
 
-**Foundational References**
-- Douglas A Reynolds et al. *Gaussian mixture models.* Encyclopedia of Biometrics, 741(659-663):3, 2009.
-- Alexander Fabisch. *gmr: Gaussian mixture regression.* JOSS, 6(62):3054, 2021.
-- Zoubin Ghahramani and Michael Jordan. *Supervised learning from incomplete data via an EM approach.* NeurIPS, 1993.
-- Christopher M Bishop. *Mixture density networks.* Technical Report, 1994.
-- Axel Brando. *Mixture density networks (MDN) for distribution and uncertainty estimation.* Master’s Thesis, 2017.
-- Axel Brando. *Mixture density networks (MDN) for distribution and uncertainty estimation.* GitHub repository, 2017.
-- Wei Zhang, Brian Barr, and John Paisley. *Gaussian process neural additive models.* arXiv:2402.12518, 2024.
+Amish Anand. Uncertainty Estimation in Regression Using Additive Models and Gaussian Processes. MS Thesis, IISER Bhopal, 2025.
 
----
+Foundational References
 
-## 📬 Contact
+Douglas A Reynolds et al. Gaussian mixture models. Encyclopedia of Biometrics, 741(659-663):3, 2009.
 
+Alexander Fabisch. gmr: Gaussian mixture regression. JOSS, 6(62):3054, 2021.
+
+Zoubin Ghahramani and Michael Jordan. Supervised learning from incomplete data via an EM approach. NeurIPS, 1993.
+
+Christopher M Bishop. Mixture density networks. Technical Report, 1994.
+
+Axel Brando. Mixture density networks (MDN) for distribution and uncertainty estimation. Master’s Thesis, 2017.
+
+Axel Brando. Mixture density networks (MDN) for distribution and uncertainty estimation. GitHub repository, 2017.
+
+Wei Zhang, Brian Barr, and John Paisley. Gaussian process neural additive models. arXiv:2402.12518, 2024.
+
+📬 Contact
 📧 amish6202@gmail.com
