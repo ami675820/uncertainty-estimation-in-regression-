@@ -2,7 +2,7 @@
 
 This repository provides implementations of two probabilistic regression methods applied to the **Auto MPG dataset**: a **Gaussian Mixture Model (GMM)** and a **Mixture Density Network (MDN)**. Both methods focus on modeling the error distribution of a base model to provide not only accurate predictions but also robust uncertainty estimates.
 
-This work was developed as part of the author's Master's thesis:
+This work is part of my Master's thesis:
 
 > **Amish Anand (2025). _Uncertainty Estimation in Regression Using Additive Models and Gaussian Processes._ Master’s Thesis, Department of Data Science and Engineering, IISER Bhopal.**
 
@@ -64,3 +64,4 @@ If you use this work, please cite the thesis and foundational references:
 ## 📬 Contact
 
 Amish Anand - amish6202@gmail.com
+
